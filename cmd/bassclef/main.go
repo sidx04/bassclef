@@ -1,46 +1,19 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"os"
+import "github.com/alecthomas/kong"
 
-	"github.com/sidx04/bassclef/internal/audio"
-)
+var CLI struct {
+	Info InfoCmd `cmd:"" help:"Display information about an audio file."`
+	// Spectrogram SpectrogramCmd `cmd:"" help:"Generate an audio spectrogram."`
+	// Peaks       PeaksCmd       `cmd:"" help:"Detect spectral peaks."`
+	// Fingerprint FingerprintCmd `cmd:"" help:"Generate audio fingerprints."`
+	// Ingest      IngestCmd      `cmd:"" help:"Add a song to the catalog."`
+	// Recognize   RecognizeCmd   `cmd:"" help:"Recognize an audio sample."`
+}
 
 func main() {
-	if len(os.Args) < 3 {
-		printUsage()
-		os.Exit(1)
-	}
+	ctx := kong.Parse(&CLI)
 
-	command := os.Args[1]
-
-	switch command {
-	case "info":
-		runInfo(os.Args[2])
-	default:
-		fmt.Printf("unknown command: %s\n", command)
-		printUsage()
-		os.Exit(1)
-	}
-}
-
-func printUsage() {
-	fmt.Println("usage:")
-	fmt.Println("  bassclef info <file.wav>")
-}
-
-func runInfo(path string) {
-	buffer, err := audio.LoadWAV(path)
-	if err != nil {
-		log.Fatalf("failed to load audio: %v", err)
-	}
-
-	duration := float64(len(buffer.Samples)) /
-		float64(buffer.SampleRate)
-
-	fmt.Printf("Sample rate: %d Hz\n", buffer.SampleRate)
-	fmt.Printf("Samples: %d\n", len(buffer.Samples))
-	fmt.Printf("Duration: %.2f seconds\n", duration)
+	err := ctx.Run()
+	ctx.FatalIfErrorf(err)
 }

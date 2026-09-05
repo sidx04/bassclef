@@ -41,11 +41,12 @@ func (d *WAVDecoder) Decode(r io.Reader) (*AudioBuffer, error) {
 		return nil, fmt.Errorf("invalid channel count: %d", buf.Format.NumChannels)
 	}
 
-	samples := make([]float64, len(buf.Data))
-
-	for i, sample := range buf.Data {
-		samples[i] = float64(sample)
+	samples, err := stereoToMono(buf.Data, buf.Format.NumChannels)
+	if err != nil {
+		return nil, fmt.Errorf("error converting from stereo to mono")
 	}
+
+	samples = normaliseSamples(samples, buf.SourceBitDepth)
 
 	return &AudioBuffer{Samples: samples, SampleRate: buf.Format.SampleRate}, nil
 }
