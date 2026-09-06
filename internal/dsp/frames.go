@@ -4,7 +4,7 @@ import "fmt"
 
 // Split the song into frames for FFT. Check [this section] of the documentation.
 //
-// [this section]: https://github.com/sidx04/bassclef.git/README.md##Frame-Extraction
+// [this section]: https://github.com/sidx04/bassclef/blob/main/README.md#frame-extraction
 func SplitFrames(samples []float64, frameSize int, hopSize int) ([][]float64, error) {
 	if frameSize <= 0 {
 		return nil, fmt.Errorf("frame size cannot be less than 0: %d", frameSize)
