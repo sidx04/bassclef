@@ -3,9 +3,9 @@ package dsp
 import "gonum.org/v1/gonum/dsp/fourier"
 
 // FFT decouples the DSP pipeline from any one FFT implementation. Forward
-// runs a forward transform over one frame of real-valued samples and
-// returns the full complex spectrum (length equal to len(input); bins are
-// conjugate-symmetric for real input, per the standard DFT).
+// runs a forward transform (time domain to frequency domain) over one frame
+// of real-valued samples and returns the full complex spectrum;
+// bins are conjugate-symmetric for real input, per the standard DFT.
 type FFT interface {
 	Forward(input []float64) []complex128
 }
