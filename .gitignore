@@ -33,3 +33,5 @@ go.work.sum
 
 # test files
 testdata/
+.tokensave
+bassclef-plan.md
