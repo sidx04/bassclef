@@ -7,8 +7,8 @@ var CLI struct {
 	Spectrogram SpectrogramCmd `cmd:"" help:"Generate an audio spectrogram."`
 	Peaks       PeaksCmd       `cmd:"" help:"Detect spectral peaks."`
 	Fingerprint FingerprintCmd `cmd:"" help:"Generate audio fingerprints."`
-	// Ingest      IngestCmd      `cmd:"" help:"Add a song to the catalog."`
-	// Recognize   RecognizeCmd   `cmd:"" help:"Recognize an audio sample."`
+	Ingest      IngestCmd      `cmd:"" help:"Add a song to the catalog."`
+	Recognize   RecognizeCmd   `cmd:"" help:"Recognize an audio sample."`
 }
 
 func main() {
