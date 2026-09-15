@@ -23,7 +23,7 @@ func HannWindow(size int) ([]float64, error) {
 	return window, nil
 }
 
-func ApplyWindow(samples []float64, window []float64) error {
+func applyWindow(samples []float64, window []float64) error {
 	if len(samples) != len(window) {
 		return fmt.Errorf(
 			"sample and window lengths should be same: %d != %d",

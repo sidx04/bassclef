@@ -2,7 +2,15 @@ package dsp
 
 import "fmt"
 
-// Split the song into frames for FFT. Check [this section] of the documentation.
+// SplitFrames splits samples into overlapping fixed-size frames for FFT
+// processing. Each frame holds frameSize samples; consecutive frames start
+// hopSize samples apart, so hopSize < frameSize gives overlapping frames
+// and hopSize == frameSize gives non-overlapping frames.
+//
+// Returns (nil, nil) if len(samples) < frameSize: not enough data for one
+// frame. Returns an error if frameSize or hopSize is not positive.
+//
+// Check [this section] of the documentation.
 //
 // [this section]: https://github.com/sidx04/bassclef/blob/main/README.md#frame-extraction
 func SplitFrames(samples []float64, frameSize int, hopSize int) ([][]float64, error) {

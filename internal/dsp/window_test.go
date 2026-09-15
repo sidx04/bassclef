@@ -42,7 +42,7 @@ func TestApplyWindow(t *testing.T) {
 		0.5, 1, 0.5,
 	}
 
-	err := ApplyWindow(samples, window)
+	err := applyWindow(samples, window)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

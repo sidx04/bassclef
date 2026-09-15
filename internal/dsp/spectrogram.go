@@ -3,7 +3,7 @@ package dsp
 import "math/cmplx"
 
 // Spectrogram windows each frame, runs it through fft, and returns the
-// per-frame magnitude spectrum. Frames are left untouched; ApplyWindow
+// per-frame magnitude spectrum. Frames are left untouched; applyWindow
 // runs against a copy.
 func Spectrogram(frames [][]float64, window []float64, fft FFT) ([][]float64, error) {
 	spectrogram := make([][]float64, len(frames))
@@ -12,7 +12,7 @@ func Spectrogram(frames [][]float64, window []float64, fft FFT) ([][]float64, er
 		windowed := make([]float64, len(frame))
 		copy(windowed, frame)
 
-		if err := ApplyWindow(windowed, window); err != nil {
+		if err := applyWindow(windowed, window); err != nil {
 			return nil, err
 		}
 
