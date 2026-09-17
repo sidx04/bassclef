@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/sidx04/bassclef/internal/audio"
-	"github.com/sidx04/bassclef/internal/dsp"
 	"github.com/sidx04/bassclef/internal/fingerprint"
 	"github.com/sidx04/bassclef/internal/storage"
 )
@@ -21,31 +20,9 @@ func Ingest(store storage.Store, path, title, artist string) error {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}
 
-	cfg := dsp.DefaultConfig()
-
-	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
+	landmarks, err := fingerprint.FromBuffer(buf)
 	if err != nil {
-		return fmt.Errorf("failed to split frames: %w", err)
-	}
-
-	window, err := dsp.HannWindow(cfg.FFTSize)
-	if err != nil {
-		return fmt.Errorf("failed to build window: %w", err)
-	}
-
-	spectrogram, err := dsp.Spectrogram(frames, window, dsp.NewFFT(cfg.FFTSize))
-	if err != nil {
-		return fmt.Errorf("failed to compute spectrogram: %w", err)
-	}
-
-	peaks, err := fingerprint.FindPeaks(spectrogram, fingerprint.DefaultPeakConfig())
-	if err != nil {
-		return fmt.Errorf("failed to find peaks: %w", err)
-	}
-
-	landmarks, err := fingerprint.GenerateLandmarks(peaks, fingerprint.DefaultLandmarkConfig())
-	if err != nil {
-		return fmt.Errorf("failed to generate landmarks: %w", err)
+		return fmt.Errorf("failed to fingerprint audio: %w", err)
 	}
 
 	duration := float64(len(buf.Samples)) / float64(buf.SampleRate)

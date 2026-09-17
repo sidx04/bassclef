@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/sidx04/bassclef/internal/audio"
 	"github.com/sidx04/bassclef/internal/catalog"
@@ -208,31 +209,16 @@ func (cmd *RecognizeCmd) Run() error {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}
 
-	cfg := dsp.DefaultConfig()
+	return recognizeBuffer(store, buf, cmd.TopN, cmd.MinVotes)
+}
 
-	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
+// recognizeBuffer fingerprints buf and matches it against store, printing
+// ranked results. Shared by every recognition path (WAV file, microphone)
+// so they can never drift from each other's pipeline or output format.
+func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes int) error {
+	landmarks, err := fingerprint.FromBuffer(buf)
 	if err != nil {
-		return fmt.Errorf("failed to split frames: %w", err)
-	}
-
-	window, err := dsp.HannWindow(cfg.FFTSize)
-	if err != nil {
-		return fmt.Errorf("failed to build window: %w", err)
-	}
-
-	spectrogram, err := dsp.Spectrogram(frames, window, dsp.NewFFT(cfg.FFTSize))
-	if err != nil {
-		return fmt.Errorf("failed to compute spectrogram: %w", err)
-	}
-
-	peaks, err := fingerprint.FindPeaks(spectrogram, fingerprint.DefaultPeakConfig())
-	if err != nil {
-		return fmt.Errorf("failed to find peaks: %w", err)
-	}
-
-	landmarks, err := fingerprint.GenerateLandmarks(peaks, fingerprint.DefaultLandmarkConfig())
-	if err != nil {
-		return fmt.Errorf("failed to generate landmarks: %w", err)
+		return fmt.Errorf("failed to fingerprint audio: %w", err)
 	}
 
 	query := make([]matcher.QueryLandmark, len(landmarks))
@@ -243,7 +229,7 @@ func (cmd *RecognizeCmd) Run() error {
 		}
 	}
 
-	candidates, err := matcher.Match(store, query, matcher.MatchConfig{TopN: cmd.TopN, MinVotes: cmd.MinVotes})
+	candidates, err := matcher.Match(store, query, matcher.MatchConfig{TopN: topN, MinVotes: minVotes})
 	if err != nil {
 		return fmt.Errorf("failed to match: %w", err)
 	}
@@ -286,4 +272,28 @@ func (cmd *IngestCmd) Run() error {
 	fmt.Printf("Ingested %q\n", cmd.File)
 
 	return nil
+}
+
+type ListenCmd struct {
+	Duration time.Duration `name:"duration" default:"8s" help:"How long to record from the microphone."`
+	DB       string        `name:"db" default:"bassclef.db" help:"Path to the catalog database." type:"path"`
+	TopN     int           `name:"top-n" default:"5" help:"Max number of ranked candidates to show."`
+	MinVotes int           `name:"min-votes" default:"1" help:"Minimum vote score to include a candidate."`
+}
+
+func (cmd *ListenCmd) Run() error {
+	store, err := storage.Open(cmd.DB)
+	if err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+	defer store.Close()
+
+	fmt.Printf("Listening for %s...\n", cmd.Duration)
+
+	buf, err := audio.Capture(cmd.Duration)
+	if err != nil {
+		return fmt.Errorf("failed to capture audio: %w", err)
+	}
+
+	return recognizeBuffer(store, buf, cmd.TopN, cmd.MinVotes)
 }

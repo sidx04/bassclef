@@ -12,6 +12,7 @@ require (
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/gen2brain/malgo v0.11.26 // indirect
 	github.com/go-audio/riff v1.0.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
