@@ -15,7 +15,7 @@ func Ingest(store storage.Store, path, title, artist string) error {
 		return fmt.Errorf("title cannot be empty")
 	}
 
-	buf, err := audio.LoadWAV(path)
+	buf, err := audio.Load(path)
 	if err != nil {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}

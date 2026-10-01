@@ -56,7 +56,7 @@ func generateTestWAV(t *testing.T, path string) {
 func computeExpectedLandmarks(t *testing.T, wavPath string) []fingerprint.Landmark {
 	t.Helper()
 
-	buf, err := audio.LoadWAV(wavPath)
+	buf, err := audio.Load(wavPath)
 	if err != nil {
 		t.Fatalf("failed to load wav: %v", err)
 	}
