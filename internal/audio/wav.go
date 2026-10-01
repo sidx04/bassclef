@@ -3,7 +3,6 @@ package audio
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/go-audio/wav"
 )
@@ -49,20 +48,4 @@ func (d *WAVDecoder) Decode(r io.Reader) (*AudioBuffer, error) {
 	samples = normaliseSamples(samples, buf.SourceBitDepth)
 
 	return &AudioBuffer{Samples: samples, SampleRate: buf.Format.SampleRate}, nil
-}
-
-func LoadWAV(path string) (*AudioBuffer, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("error opening WAV file: %w", err)
-	}
-	defer file.Close()
-
-	decoder := NewWAVDecoder()
-	buf, err := decoder.Decode(file)
-	if err != nil {
-		return nil, fmt.Errorf("error loading WAV file: %w", err)
-	}
-
-	return buf, nil
 }
