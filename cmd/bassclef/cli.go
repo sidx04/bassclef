@@ -18,7 +18,7 @@ type InfoCmd struct {
 }
 
 func (cmd *InfoCmd) Run() error {
-	buf, err := audio.LoadWAV(cmd.File)
+	buf, err := audio.Load(cmd.File)
 	if err != nil {
 		log.Fatalf("failed to load audio: %v", err)
 	}
@@ -37,7 +37,7 @@ type SpectrogramCmd struct {
 }
 
 func (cmd *SpectrogramCmd) Run() error {
-	buf, err := audio.LoadWAV(cmd.File)
+	buf, err := audio.Load(cmd.File)
 	if err != nil {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}
@@ -75,7 +75,7 @@ type PeaksCmd struct {
 }
 
 func (cmd *PeaksCmd) Run() error {
-	buf, err := audio.LoadWAV(cmd.File)
+	buf, err := audio.Load(cmd.File)
 	if err != nil {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}
@@ -133,7 +133,7 @@ type FingerprintCmd struct {
 }
 
 func (cmd *FingerprintCmd) Run() error {
-	buf, err := audio.LoadWAV(cmd.File)
+	buf, err := audio.Load(cmd.File)
 	if err != nil {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}
@@ -204,7 +204,7 @@ func (cmd *RecognizeCmd) Run() error {
 	}
 	defer store.Close()
 
-	buf, err := audio.LoadWAV(cmd.File)
+	buf, err := audio.Load(cmd.File)
 	if err != nil {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}
