@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/sidx04/bassclef/internal/audio"
@@ -10,8 +11,22 @@ import (
 	"github.com/sidx04/bassclef/internal/dsp"
 	"github.com/sidx04/bassclef/internal/fingerprint"
 	"github.com/sidx04/bassclef/internal/matcher"
+	"github.com/sidx04/bassclef/internal/metadata"
 	"github.com/sidx04/bassclef/internal/storage"
 )
+
+// newMetadataProvider builds the Spotify metadata provider. Missing or
+// invalid credentials are not fatal to recognition — only enrichment is
+// skipped, with a one-line warning.
+func newMetadataProvider() metadata.MetadataProvider {
+	provider, err := metadata.NewSpotifyProvider()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: Spotify metadata unavailable: %v\n", err)
+		return nil
+	}
+
+	return provider
+}
 
 type InfoCmd struct {
 	File string `arg:"" name:"file" help:"Path to the audio file." type:"path"`
@@ -209,13 +224,14 @@ func (cmd *RecognizeCmd) Run() error {
 		return fmt.Errorf("failed to load audio: %w", err)
 	}
 
-	return recognizeBuffer(store, buf, cmd.TopN, cmd.MinVotes)
+	return recognizeBuffer(store, buf, cmd.TopN, cmd.MinVotes, newMetadataProvider())
 }
 
 // recognizeBuffer fingerprints buf and matches it against store, printing
 // ranked results. Shared by every recognition path (WAV file, microphone)
 // so they can never drift from each other's pipeline or output format.
-func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes int) error {
+// provider may be nil (Spotify unavailable) — enrichment is then skipped.
+func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes int, provider metadata.MetadataProvider) error {
 	landmarks, err := fingerprint.FromBuffer(buf)
 	if err != nil {
 		return fmt.Errorf("failed to fingerprint audio: %w", err)
@@ -246,6 +262,18 @@ func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes
 		}
 
 		fmt.Printf("%d. %s - %s (score=%d)\n", i+1, song.Title, song.Artist, c.Score)
+
+		if provider == nil {
+			continue
+		}
+
+		meta, err := provider.Lookup(song.Title, song.Artist)
+		if err != nil {
+			continue
+		}
+
+		fmt.Printf("   Album: %s\n", meta.Album)
+		fmt.Printf("   Spotify: %s\n", meta.URL)
 	}
 
 	return nil
@@ -295,5 +323,5 @@ func (cmd *ListenCmd) Run() error {
 		return fmt.Errorf("failed to capture audio: %w", err)
 	}
 
-	return recognizeBuffer(store, buf, cmd.TopN, cmd.MinVotes)
+	return recognizeBuffer(store, buf, cmd.TopN, cmd.MinVotes, newMetadataProvider())
 }
