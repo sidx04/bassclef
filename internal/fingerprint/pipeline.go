@@ -8,11 +8,14 @@ import (
 )
 
 // FromBuffer runs the full audio-to-landmarks fingerprinting pipeline -
-// frame splitting, windowing, FFT, spectrogram, peak detection, and
-// landmark generation - using DefaultPeakConfig and DefaultLandmarkConfig.
-// catalog.Ingest and every CLI recognition path share this, so both sides
-// of matching always use identical config.
+// gain normalization, frame splitting, windowing, FFT, spectrogram, peak
+// detection, and landmark generation - using DefaultPeakConfig and
+// DefaultLandmarkConfig. catalog.Ingest and every CLI recognition path
+// share this, so both sides of matching always use identical config and
+// gain handling.
 func FromBuffer(buf *audio.AudioBuffer) ([]Landmark, error) {
+	dsp.NormalizeGain(buf.Samples)
+
 	cfg := dsp.DefaultConfig()
 
 	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
