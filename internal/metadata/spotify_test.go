@@ -57,7 +57,13 @@ func TestSpotifyProviderLookup(t *testing.T) {
 						{
 							"name":    "Song Title",
 							"artists": []map[string]any{{"name": "Artist Name"}},
-							"album":   map[string]any{"name": "Album Name"},
+							"album": map[string]any{
+								"name": "Album Name",
+								"images": []map[string]any{
+									{"url": "https://i.scdn.co/image/large.jpg", "height": 640, "width": 640},
+									{"url": "https://i.scdn.co/image/small.jpg", "height": 64, "width": 64},
+								},
+							},
 							"external_urls": map[string]any{
 								"spotify": "https://open.spotify.com/track/abc123",
 							},
@@ -74,10 +80,11 @@ func TestSpotifyProviderLookup(t *testing.T) {
 	}
 
 	want := Metadata{
-		Title:  "Song Title",
-		Artist: "Artist Name",
-		Album:  "Album Name",
-		URL:    "https://open.spotify.com/track/abc123",
+		Title:    "Song Title",
+		Artist:   "Artist Name",
+		Album:    "Album Name",
+		URL:      "https://open.spotify.com/track/abc123",
+		CoverURL: "https://i.scdn.co/image/large.jpg",
 	}
 
 	if got != want {

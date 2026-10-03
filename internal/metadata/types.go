@@ -9,10 +9,11 @@ var ErrNotFound = errors.New("no matching track found")
 // Metadata is the external information a MetadataProvider can attach to a
 // recognized song.
 type Metadata struct {
-	Title  string
-	Artist string
-	Album  string
-	URL    string
+	Title    string
+	Artist   string
+	Album    string
+	URL      string
+	CoverURL string
 }
 
 // MetadataProvider looks up external metadata for a song by title and

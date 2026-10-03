@@ -107,6 +107,11 @@ func (p *SpotifyProvider) Lookup(title, artist string) (Metadata, error) {
 		result.Artist = item.Artists[0].Name
 	}
 
+	if len(item.Album.Images) > 0 {
+		// Spotify orders images largest-first.
+		result.CoverURL = item.Album.Images[0].URL
+	}
+
 	return result, nil
 }
 
@@ -174,7 +179,12 @@ type artist struct {
 }
 
 type album struct {
-	Name string `json:"name"`
+	Name   string         `json:"name"`
+	Images []spotifyImage `json:"images"`
+}
+
+type spotifyImage struct {
+	URL string `json:"url"`
 }
 
 type externalURLs struct {
