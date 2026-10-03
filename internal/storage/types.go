@@ -32,6 +32,7 @@ type Store interface {
 	InsertFingerprints(songID int64, fps []Fingerprint) error
 	LookupHash(hash uint64) ([]FingerprintMatch, error)
 	GetSong(id int64) (Song, error)
+	CountFingerprints(songID int64) (int, error)
 	Close() error
 }
 

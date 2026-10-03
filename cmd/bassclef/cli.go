@@ -261,7 +261,7 @@ func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes
 			return fmt.Errorf("failed to get song %d: %w", c.SongID, err)
 		}
 
-		fmt.Printf("%d. %s - %s (score=%d)\n", i+1, song.Title, song.Artist, c.Score)
+		fmt.Printf("%d. %s - %s (score=%d, confidence=%.4f)\n", i+1, song.Title, song.Artist, c.Score, c.Confidence)
 
 		if provider == nil {
 			continue

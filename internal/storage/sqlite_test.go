@@ -183,6 +183,64 @@ func TestFingerprintsCascadeDeleteWithSong(t *testing.T) {
 	}
 }
 
+func TestCountFingerprints(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "test.db")
+
+	store, err := Open(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer store.Close()
+
+	songID, err := store.InsertSong(Song{Title: "A", Source: "a.wav"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	fps := []Fingerprint{
+		{Hash: 1, SongID: songID, TimeOffset: 0},
+		{Hash: 2, SongID: songID, TimeOffset: 1},
+		{Hash: 3, SongID: songID, TimeOffset: 2},
+	}
+
+	if err := store.InsertFingerprints(songID, fps); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	count, err := store.CountFingerprints(songID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if count != 3 {
+		t.Errorf("got %d, want 3", count)
+	}
+}
+
+func TestCountFingerprintsNoFingerprints(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "test.db")
+
+	store, err := Open(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer store.Close()
+
+	songID, err := store.InsertSong(Song{Title: "A", Source: "a.wav"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	count, err := store.CountFingerprints(songID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if count != 0 {
+		t.Errorf("got %d, want 0", count)
+	}
+}
+
 func TestOpenEnablesForeignKeys(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "test.db")
 

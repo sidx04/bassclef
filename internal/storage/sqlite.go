@@ -151,3 +151,18 @@ func (s *SQLiteStore) GetSong(id int64) (Song, error) {
 
 	return song, nil
 }
+
+// CountFingerprints returns how many fingerprint rows exist for songID.
+func (s *SQLiteStore) CountFingerprints(songID int64) (int, error) {
+	var count int
+
+	err := s.db.QueryRow(
+		"SELECT COUNT(*) FROM fingerprints WHERE song_id = ?",
+		songID,
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count fingerprints for song %d: %w", songID, err)
+	}
+
+	return count, nil
+}

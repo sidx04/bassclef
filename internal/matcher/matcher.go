@@ -8,9 +8,14 @@ import (
 )
 
 // Match ranks catalog songs against a query clip's landmarks using
-// time-offset voting: for each matching hash, the offset
-// between the catalog's and the query's time is tallied per song, and a
-// song's score is its single best-aligned offset's vote count.
+// time-offset voting: for each matching hash, the offset between the
+// catalog's and the query's time is tallied per song, and a song's raw
+// score is its single best-aligned offset's vote count. Candidates are
+// then ranked by score a normalized by the song's total fingerprint count,
+// called `confidence`, not raw score; otherwise a song with far more
+// fingerprints than others wins by sheer density. This surmounts to
+// more chances of an incidental hash collision at some offset,
+// regardless of the query.
 func Match(store storage.Store, query []QueryLandmark, cfg MatchConfig) ([]Candidate, error) {
 	if cfg.TopN <= 0 {
 		return nil, fmt.Errorf("top N must be positive: %d", cfg.TopN)
@@ -56,12 +61,22 @@ func Match(store storage.Store, query []QueryLandmark, cfg MatchConfig) ([]Candi
 			continue
 		}
 
-		candidates = append(candidates, Candidate{SongID: songID, Score: best})
+		total, err := store.CountFingerprints(songID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to count fingerprints: %w", err)
+		}
+
+		var confidence float64
+		if total > 0 {
+			confidence = float64(best) / float64(total)
+		}
+
+		candidates = append(candidates, Candidate{SongID: songID, Score: best, Confidence: confidence})
 	}
 
 	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].Score != candidates[j].Score {
-			return candidates[i].Score > candidates[j].Score
+		if candidates[i].Confidence != candidates[j].Confidence {
+			return candidates[i].Confidence > candidates[j].Confidence
 		}
 		return candidates[i].SongID < candidates[j].SongID
 	})

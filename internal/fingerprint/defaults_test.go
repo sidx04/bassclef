@@ -4,7 +4,7 @@ import "testing"
 
 func TestDefaultPeakConfig(t *testing.T) {
 	got := DefaultPeakConfig()
-	want := PeakConfig{FreqWindow: 3, TimeWindow: 3, MinMagnitude: 0}
+	want := PeakConfig{FreqWindow: 3, TimeWindow: 3, MinMagnitude: 1.0}
 
 	if got != want {
 		t.Errorf("got %#v, want %#v", got, want)
