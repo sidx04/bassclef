@@ -227,14 +227,28 @@ func (cmd *RecognizeCmd) Run() error {
 	return recognizeBuffer(store, buf, cmd.TopN, cmd.MinVotes, newMetadataProvider())
 }
 
-// recognizeBuffer fingerprints buf and matches it against store, printing
-// ranked results. Shared by every recognition path (WAV file, microphone)
-// so they can never drift from each other's pipeline or output format.
-// provider may be nil (Spotify unavailable) — enrichment is then skipped.
-func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes int, provider metadata.MetadataProvider) error {
+// MatchResult is one ranked, display-ready recognition candidate: a
+// catalog song plus its match score and (if available) Spotify metadata.
+// Shared by the CLI's printed output and the HTTP API's JSON response.
+type MatchResult struct {
+	Title      string  `json:"title"`
+	Artist     string  `json:"artist"`
+	Score      int     `json:"score"`
+	Confidence float64 `json:"confidence"`
+	Album      string  `json:"album,omitempty"`
+	SpotifyURL string  `json:"spotify_url,omitempty"`
+	CoverURL   string  `json:"cover_url,omitempty"`
+}
+
+// recognizeCandidates fingerprints buf, matches it against store, and
+// enriches each ranked candidate with Spotify metadata when available.
+// provider may be nil (Spotify unavailable) — enrichment is then skipped
+// for every candidate. A failed or missing metadata lookup is not an
+// error; the candidate is returned without Album/SpotifyURL set.
+func recognizeCandidates(store storage.Store, buf *audio.AudioBuffer, topN, minVotes int, provider metadata.MetadataProvider) ([]MatchResult, error) {
 	landmarks, err := fingerprint.FromBuffer(buf)
 	if err != nil {
-		return fmt.Errorf("failed to fingerprint audio: %w", err)
+		return nil, fmt.Errorf("failed to fingerprint audio: %w", err)
 	}
 
 	query := make([]matcher.QueryLandmark, len(landmarks))
@@ -247,33 +261,62 @@ func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes
 
 	candidates, err := matcher.Match(store, query, matcher.MatchConfig{TopN: topN, MinVotes: minVotes})
 	if err != nil {
-		return fmt.Errorf("failed to match: %w", err)
+		return nil, fmt.Errorf("failed to match: %w", err)
 	}
 
-	if len(candidates) == 0 {
+	var results []MatchResult
+
+	for _, c := range candidates {
+		song, err := store.GetSong(c.SongID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get song %d: %w", c.SongID, err)
+		}
+
+		result := MatchResult{
+			Title:      song.Title,
+			Artist:     song.Artist,
+			Score:      c.Score,
+			Confidence: c.Confidence,
+		}
+
+		if provider != nil {
+			if meta, err := provider.Lookup(song.Title, song.Artist); err == nil {
+				result.Album = meta.Album
+				result.SpotifyURL = meta.URL
+				result.CoverURL = meta.CoverURL
+			}
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+// recognizeBuffer fingerprints buf and matches it against store, printing
+// ranked results. Shared by every CLI recognition path (WAV/MP3 file,
+// microphone) so they can never drift from each other's pipeline or
+// output format.
+func recognizeBuffer(store storage.Store, buf *audio.AudioBuffer, topN, minVotes int, provider metadata.MetadataProvider) error {
+	results, err := recognizeCandidates(store, buf, topN, minVotes, provider)
+	if err != nil {
+		return err
+	}
+
+	if len(results) == 0 {
 		fmt.Println("No match found.")
 		return nil
 	}
 
-	for i, c := range candidates {
-		song, err := store.GetSong(c.SongID)
-		if err != nil {
-			return fmt.Errorf("failed to get song %d: %w", c.SongID, err)
+	for i, r := range results {
+		fmt.Printf("%d. %s - %s (score=%d, confidence=%.4f)\n", i+1, r.Title, r.Artist, r.Score, r.Confidence)
+
+		if r.Album != "" {
+			fmt.Printf("   Album: %s\n", r.Album)
 		}
-
-		fmt.Printf("%d. %s - %s (score=%d, confidence=%.4f)\n", i+1, song.Title, song.Artist, c.Score, c.Confidence)
-
-		if provider == nil {
-			continue
+		if r.SpotifyURL != "" {
+			fmt.Printf("   Spotify: %s\n", r.SpotifyURL)
 		}
-
-		meta, err := provider.Lookup(song.Title, song.Artist)
-		if err != nil {
-			continue
-		}
-
-		fmt.Printf("   Album: %s\n", meta.Album)
-		fmt.Printf("   Spotify: %s\n", meta.URL)
 	}
 
 	return nil

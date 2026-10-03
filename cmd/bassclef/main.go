@@ -10,6 +10,7 @@ var CLI struct {
 	Ingest      IngestCmd      `cmd:"" help:"Add a song to the catalog."`
 	Recognize   RecognizeCmd   `cmd:"" help:"Recognize an audio sample."`
 	Listen      ListenCmd      `cmd:"" help:"Record from the microphone and recognize it."`
+	Serve       ServeCmd       `cmd:"" help:"Start the HTTP recognize API."`
 }
 
 func main() {

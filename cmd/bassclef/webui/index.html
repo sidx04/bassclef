@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>bassclef</title>
+  <link rel="stylesheet" href="https://unpkg.com/@knadh/oat/oat.min.css">
+  <script src="https://unpkg.com/@knadh/oat/oat.min.js" defer></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <main class="page">
+    <h1>bassclef</h1>
+    <p class="subtitle">Record 10 seconds from the microphone to recognize a song against the catalog.</p>
+
+    <article class="card record-card">
+      <button id="recordBtn" type="button" class="record-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+          <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+          <line x1="12" y1="18" x2="12" y2="22" />
+          <line x1="8" y1="22" x2="16" y2="22" />
+        </svg>
+        <span>Record (10s)</span>
+      </button>
+    </article>
+
+    <div id="status"></div>
+    <div id="results" class="vstack"></div>
+  </main>
+
+  <script src="index.js" defer></script>
+</body>
+
+</html>
