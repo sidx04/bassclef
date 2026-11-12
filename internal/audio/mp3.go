@@ -8,9 +8,6 @@ import (
 	"github.com/tosone/minimp3"
 )
 
-// MP3Decoder is an AudioDecoder for MP3 audio.
-type MP3Decoder struct{}
-
 func NewMP3Decoder() *MP3Decoder {
 	return &MP3Decoder{}
 }

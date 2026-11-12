@@ -45,10 +45,10 @@ func stereoToMono(samples []int, channels int) ([]float64, error) {
 
 	monoAudio := make([]float64, frameCount)
 
-	for frame := 0; frame < frameCount; frame++ {
+	for frame := range frameCount {
 		var sum float64
 
-		for channel := 0; channel < channels; channel++ {
+		for channel := range channels {
 			idx := frame*channels + channel
 
 			sum += float64(samples[idx])

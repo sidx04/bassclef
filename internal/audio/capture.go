@@ -9,13 +9,7 @@ import (
 	"github.com/gen2brain/malgo"
 )
 
-// captureSampleRate must match the sample rate WAV fixtures are ingested
-// at (44100 Hz). Landmark time offsets are a sample-count-based unit,
-// not a real-time one, so a mismatched capture rate
-// would silently misalign matching against the catalog.
-const captureSampleRate = 44100 // in hertz
-
-// Capture records duration of audio from the default input device and
+// Records audio for mentioned duration from the default input device and
 // returns it as a normalized mono AudioBuffer.
 func Capture(duration time.Duration) (*AudioBuffer, error) {
 	if duration <= 0 {
@@ -31,7 +25,7 @@ func Capture(duration time.Duration) (*AudioBuffer, error) {
 	deviceConfig := malgo.DefaultDeviceConfig(malgo.Capture)
 	deviceConfig.Capture.Format = malgo.FormatS16
 	deviceConfig.Capture.Channels = 1
-	deviceConfig.SampleRate = captureSampleRate
+	deviceConfig.SampleRate = defaultCaptureSampleRate
 
 	var mu sync.Mutex
 	var raw []byte
@@ -69,5 +63,5 @@ func Capture(duration time.Duration) (*AudioBuffer, error) {
 
 	samples = normaliseSamples(samples, 16)
 
-	return &AudioBuffer{Samples: samples, SampleRate: captureSampleRate}, nil
+	return &AudioBuffer{Samples: samples, SampleRate: defaultCaptureSampleRate}, nil
 }

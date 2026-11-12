@@ -12,9 +12,7 @@ var decodersByExt = map[string]AudioDecoder{
 	".mp3": NewMP3Decoder(),
 }
 
-// Load opens the file at path and decodes it with the decoder matching
-// its extension (case-insensitive). No format flag needed — every caller
-// goes through this, not a per-format Load function.
+// Load opens the file at path and decodes it with the decoder matching its extension.
 func Load(path string) (*AudioBuffer, error) {
 	ext := strings.ToLower(filepath.Ext(path))
 
