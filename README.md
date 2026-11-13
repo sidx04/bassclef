@@ -40,22 +40,22 @@ git clone https://github.com/sidx04/bassclef.git
 cd bassclef
 go build -o bassclef ./cmd/bassclef
 
-# 1. Add songs to the catalog (creates bassclef.db in the current directory)
-./bassclef ingest songs/one.wav --title "Song One" --artist "Artist A"
-./bassclef ingest songs/two.mp3 --title "Song Two" --artist "Artist B"
+# Add songs to the catalog (creates bassclef.db in the current directory)
+./bassclef ingest songs/uno.wav --title "Song Uno" --artist "Artist A"
+./bassclef ingest songs/dos.mp3 --title "Song Dos" --artist "Artist B"
 
-# 2. Identify a clip
+# Identify a clip
 ./bassclef recognize clips/unknown.wav
 
-# 3. Or listen through the microphone
+# Alternatively, listen through the microphone
 ./bassclef listen --duration 8s
 ```
 
 Example output:
 
 ```
-1. Song One - Artist A (score=212, confidence=0.0143)
-   Album: Some Album
+1. Song Uno - Artist A (score=212, confidence=0.0143)
+   Album: Some Album with Song Uno
    Spotify: https://open.spotify.com/track/...
 ```
 
