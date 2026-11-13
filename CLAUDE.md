@@ -4,59 +4,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`bassclef` is a learning-focused Go implementation of a Shazam-style audio fingerprinting system, built from first principles rather than using an ML black box. Core recognition pipeline (target, not fully built):
+`bassclef` is a learning-focused Go implementation of a Shazam-style audio fingerprinting system, built from first principles rather than using an ML black box. The full recognition pipeline is implemented:
 
 ```
-Audio → Spectrogram → Spectral Peaks → Landmark Pairs → Hashes → Database → Time-Offset Voting → Song Match
+Audio → Gain normalize → Frames → Window → FFT → Spectrogram → Peaks → Landmark Pairs → Hashes → SQLite → Time-Offset Voting → Song Match → (optional) Spotify metadata
 ```
 
-`bassclef-plan.md` (gitignored, local only) is the full design doc this file is distilled from — it's the source of truth for algorithm details and the roadmap below. Re-read it directly if a task needs more than the summary here.
+`README.md` is the user/contributor-facing doc (usage, CLI, HTTP API, layout). `NOTES.md` holds background notes and references. `bassclef-plan.md` (gitignored, local only) is the original design doc; it's useful for algorithm rationale but its roadmap predates the current code.
 
 ## Commands
 
 ```
-go build ./...                          # build everything
-go run ./cmd/bassclef info <file.wav>   # only implemented CLI subcommand today
-go test ./...                           # run all tests
-go test ./internal/dsp/...              # test a single package
-go test ./internal/dsp/ -run TestName   # run a single test
+go build ./...                                 # build everything
+go build -o bassclef ./cmd/bassclef            # build the binary
+go run ./cmd/bassclef <command> --help         # info|spectrogram|peaks|fingerprint|ingest|recognize|listen|serve
+go test ./...                                  # run all tests
+go test ./internal/dsp/...                     # test a single package
+go test ./internal/dsp/ -run TestName          # run a single test
+go test -bench=. ./internal/dsp/ ./internal/fingerprint/
 go vet ./...
 ```
 
-Sample WAV fixtures for manual testing/tests live in `testdata/` (gitignored).
+Audio fixtures for manual testing live in `testdata/` (gitignored). The catalog DB defaults to `bassclef.db` in the working directory (`*.db` is gitignored).
 
-## Architecture: what's implemented
+## Architecture
 
-- **`cmd/bassclef/`** — the CLI binary (`package main`). Uses `alecthomas/kong` for command parsing; `main.go` declares a single `CLI` struct where each subcommand is a field (commented-out fields show planned-but-unbuilt commands: spectrogram, peaks, fingerprint, ingest, recognize — see roadmap below). Each subcommand's flags/args and `Run()` method live in its own file (e.g. `cli.go` has `InfoCmd`). Add a new subcommand by defining a `<X>Cmd` struct with a `Run() error` method and wiring it into the `CLI` struct in `main.go`.
-- **`internal/audio/`** — decodes source audio into the canonical `AudioBuffer{Samples []float64, SampleRate int}`, normalized to `-1.0..1.0` mono float64 regardless of input format. `AudioDecoder` is an interface (`Decode(io.Reader) (*AudioBuffer, error)`) so additional decoders (MP3, mic capture) can plug in alongside `WAVDecoder` without changing downstream code. `LoadWAV` is the file-path convenience entry point; `utils.go` holds the stereo→mono averaging and bit-depth normalization helpers the decoder relies on.
-- **`internal/dsp/`** — turns a sample buffer into FFT-ready frames. `SplitFrames` chops the signal into overlapping windows (frame/hop size come from `Config`; `DefaultConfig()` is FFT size 4096 / hop size 2048, matching the plan's target sample rate of 44,100 Hz). `HannWindow` + `ApplyWindow` taper frame edges to prevent spectral leakage before an FFT is run (see README for the periodicity/leakage rationale). The FFT and spectrogram step itself is **not implemented yet** — this package currently only prepares frames for it.
-- Root-level `main.go` (`package main`, distinct from `cmd/bassclef/main.go`) is currently an empty stub — the real entry point is `cmd/bassclef/main.go`.
+- **`cmd/bassclef/`** — the binary (`package main`), using `alecthomas/kong`. `main.go` declares the `CLI` struct; each subcommand is a field. `cli.go` holds all subcommands except `serve`, plus the shared recognition path: `recognizeCandidates` (fingerprint → match → Spotify enrich, returns `[]MatchResult`) and `recognizeBuffer` (prints it). File, mic, and HTTP recognition all go through `recognizeCandidates` so they can't drift. `api.go` holds `ServeCmd`, the `POST /recognize` handler (`newRecognizeHandler`, store/provider injected for tests), and the `go:embed`-ed `webui/` static UI. Add a subcommand by defining a `<X>Cmd` struct with `Run() error` and adding it to `CLI`.
+- **`internal/audio/`** — decodes to the canonical `AudioBuffer{Samples []float64, SampleRate int}`: mono, normalized to `-1.0..1.0`. `AudioDecoder` interface (`Decode(io.Reader)`), implemented by `WAVDecoder` and `MP3Decoder`. `Load(path)` picks a decoder by file extension (`decodersByExt` in `load.go`). `Capture(duration)` records from the default mic via `malgo` (cgo) at 44,100 Hz. `utils.go` has stereo→mono and bit-depth normalization helpers.
+- **`internal/dsp/`** — `NormalizeGain` (peak-scale to full scale, in place), `SplitFrames`, `WindowFunc` / `HannWindow`, `FFT` interface (`Forward([]float64) []complex128`) with `CmplxFFT` (gonum) as the implementation, `Spectrogram(frames, window, fft)` → magnitudes. `Config` / `DefaultConfig()`: FFT size 4096, hop 2048, Hann window.
+- **`internal/fingerprint/`** — `FindPeaks` (local-max search with `PeakConfig{FreqWindow, TimeWindow, MinMagnitude}`), `GenerateLandmarks` (`LandmarkConfig{MinDeltaFrames, MaxDeltaFrames, Fanout}`), `Hash(f1, f2, dt) uint64` packing `[f1:12][f2:12][dt:14]`, `BinToHz`. `FromBuffer(buf)` runs the whole pipeline with `DefaultPeakConfig()` (3/3/1.0) and `DefaultLandmarkConfig()` (1/50/10) from `defaults.go`.
+- **`internal/catalog/`** — `Ingest(store, path, title, artist)`: load → `FromBuffer` → insert song + fingerprints.
+- **`internal/storage/`** — `Store` interface (`InsertSong`, `InsertFingerprints`, `LookupHash`, `GetSong`, `CountFingerprints`, `Close`); `SQLiteStore` via pure-Go `modernc.org/sqlite`. Schema: `songs(id, title, artist, duration, source UNIQUE)`, `fingerprints(hash, song_id, time_offset)` indexed on `hash`.
+- **`internal/matcher/`** — `Match(store, []QueryLandmark, MatchConfig{TopN, MinVotes})`: `offset = db_time - query_time`, `votes[song][offset]++`; `Score` = best offset's votes, `Confidence` = Score / song's fingerprint count. Ranks by `Confidence`; `MinVotes` filters on raw `Score`.
+- **`internal/metadata/`** — `MetadataProvider` interface (`Lookup(title, artist string) (Metadata, error)`), `SpotifyProvider` (Client Credentials flow, token cached). Reads `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_ACCOUNTS_URL`, `SPOTIFY_API_URL` from env or `.env` (URLs have no defaults). Missing credentials are non-fatal: `newMetadataProvider` warns and returns nil, and recognition skips enrichment.
 
-## Architecture: planned but not present
+## Invariants
 
-Per `bassclef-plan.md`, these packages don't exist yet — check there before assuming a design:
-
-- **`internal/dsp`** (extension) — an `FFT` interface (`Forward(input []float64) []complex128`) is meant to decouple the DSP pipeline from any one FFT library; magnitudes across frames form the spectrogram.
-- **`internal/fingerprint/`** — peak detection, landmark pairing, hashing:
-  - `Peak{Time, Frequency int; Magnitude float64}` — strongest local maxima per frame (start simple: top 10–30 peaks/frame; later add thresholds, log-magnitude scaling, frequency bands, neighborhood suppression).
-  - `Landmark{AnchorFrequency, TargetFrequency, DeltaTime, AnchorTime int}` built from `LandmarkConfig{MinDeltaFrames, MaxDeltaFrames, Fanout}` — pair each anchor peak with nearby target peaks (delta ~1 to 20–50 frames, fanout ~5–15 targets/anchor).
-  - `Hash(f1, f2, dt uint32) uint64` — deterministic, compact (not cryptographic) hash packing `[f1][f2][dt]`.
-- **`internal/matcher/`** — time-offset voting: `offset = database_time - query_time`, `votes[song][offset]++`; best match is the song with the strongest vote cluster at one offset. This is what lets a short clip match anywhere within a full song.
-- **`internal/catalog/`** and **`internal/storage/`** — SQLite-backed fingerprint DB (`songs` table; `fingerprints(hash, song_id, time_offset)` indexed on `hash`). Not meant to scale to a large catalog initially — Postgres/KV storage is a later swap if needed.
-- **`MetadataProvider`** interface (`Lookup(song Song) (Metadata, error)`) — keeps recognition independent of external services like Spotify; local metadata first.
-
-### Roadmap phases (plan doc §5, in order)
-
-1. Offline WAV processing (done: decode → mono → normalize)
-2. FFT + spectrogram (not started — next up)
-3. Peak detection
-4. Landmark generation + hashing
-5. SQLite database + offset-voting matcher
-6. Microphone capture (`bassclef listen --duration 8s`)
-7. External metadata providers
-
-Milestone CLI shape to match as commands land: `bassclef spectrogram|peaks|fingerprint|ingest|recognize|listen <file>`.
+- Ingest and query must fingerprint identically or hashes never align. Both go through `fingerprint.FromBuffer`; change parameters only in `dsp.DefaultConfig()` and `fingerprint/defaults.go`. Any change to window, FFT/hop size, peak/landmark defaults, or hash layout invalidates existing catalogs (re-ingest required).
+- The `peaks` / `fingerprint` CLI commands build their own pipeline from flags (default `--min-magnitude 0`, no gain normalization). They are for experimentation and do not match what `ingest` stores.
 
 ## Design principle
 
-Keep audio capture, DSP, fingerprinting, matching, and storage in separate packages under `internal/`. The fingerprinting pipeline should stay testable against WAV fixtures without requiring microphone hardware.
+Keep audio capture, DSP, fingerprinting, matching, storage, and metadata in separate packages under `internal/`, talking through the `AudioDecoder`, `FFT`, `Store`, and `MetadataProvider` interfaces. The fingerprinting pipeline should stay testable against audio fixtures without microphone hardware or network access (tests use fake stores/providers and `httptest` servers).
