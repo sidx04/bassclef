@@ -5,9 +5,13 @@ import (
 	"math"
 )
 
+// Builds a window of size coefficients, to be multiplied
+// element-wise into a frame before the FFT.
+type WindowFunc func(size int) ([]float64, error)
+
 func HannWindow(size int) ([]float64, error) {
 	if size <= 0 {
-		return nil, fmt.Errorf("window size cannot be negative: %d", size)
+		return nil, fmt.Errorf("window size must be strictly positive: %d", size)
 	}
 	window := make([]float64, size)
 

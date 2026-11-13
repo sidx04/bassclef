@@ -63,17 +63,17 @@ func computeExpectedLandmarks(t *testing.T, wavPath string) []fingerprint.Landma
 
 	cfg := dsp.DefaultConfig()
 
-	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
+	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTWindowSize, cfg.HopSize)
 	if err != nil {
 		t.Fatalf("failed to split frames: %v", err)
 	}
 
-	window, err := dsp.HannWindow(cfg.FFTSize)
+	window, err := cfg.Window(cfg.FFTWindowSize)
 	if err != nil {
 		t.Fatalf("failed to build window: %v", err)
 	}
 
-	spectrogram, err := dsp.Spectrogram(frames, window, dsp.NewFFT(cfg.FFTSize))
+	spectrogram, err := dsp.Spectrogram(frames, window, dsp.NewFFT(cfg.FFTWindowSize))
 	if err != nil {
 		t.Fatalf("failed to compute spectrogram: %v", err)
 	}

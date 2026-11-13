@@ -59,17 +59,17 @@ func (cmd *SpectrogramCmd) Run() error {
 
 	cfg := dsp.DefaultConfig()
 
-	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
+	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTWindowSize, cfg.HopSize)
 	if err != nil {
 		return fmt.Errorf("failed to split frames: %w", err)
 	}
 
-	window, err := dsp.HannWindow(cfg.FFTSize)
+	window, err := cfg.Window(cfg.FFTWindowSize)
 	if err != nil {
 		return fmt.Errorf("failed to build window: %w", err)
 	}
 
-	fft := dsp.NewFFT(cfg.FFTSize)
+	fft := dsp.NewFFT(cfg.FFTWindowSize)
 
 	spectrogram, err := dsp.Spectrogram(frames, window, fft)
 	if err != nil {
@@ -77,7 +77,7 @@ func (cmd *SpectrogramCmd) Run() error {
 	}
 
 	fmt.Printf("Frames: %d\n", len(spectrogram))
-	fmt.Printf("Bins per frame: %d\n", cfg.FFTSize)
+	fmt.Printf("Bins per frame: %d\n", cfg.FFTWindowSize)
 
 	return nil
 }
@@ -97,17 +97,17 @@ func (cmd *PeaksCmd) Run() error {
 
 	cfg := dsp.DefaultConfig()
 
-	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
+	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTWindowSize, cfg.HopSize)
 	if err != nil {
 		return fmt.Errorf("failed to split frames: %w", err)
 	}
 
-	window, err := dsp.HannWindow(cfg.FFTSize)
+	window, err := cfg.Window(cfg.FFTWindowSize)
 	if err != nil {
 		return fmt.Errorf("failed to build window: %w", err)
 	}
 
-	fft := dsp.NewFFT(cfg.FFTSize)
+	fft := dsp.NewFFT(cfg.FFTWindowSize)
 
 	spectrogram, err := dsp.Spectrogram(frames, window, fft)
 	if err != nil {
@@ -128,7 +128,7 @@ func (cmd *PeaksCmd) Run() error {
 	fmt.Printf("Peaks: %d\n", len(peaks))
 
 	for _, p := range peaks {
-		hz := fingerprint.BinToHz(p.Frequency, buf.SampleRate, cfg.FFTSize)
+		hz := fingerprint.BinToHz(p.Frequency, buf.SampleRate, cfg.FFTWindowSize)
 		fmt.Printf("time=%d freq=%.1fHz magnitude=%.4f\n", p.Time, hz, p.Magnitude)
 	}
 
@@ -155,17 +155,17 @@ func (cmd *FingerprintCmd) Run() error {
 
 	cfg := dsp.DefaultConfig()
 
-	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
+	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTWindowSize, cfg.HopSize)
 	if err != nil {
 		return fmt.Errorf("failed to split frames: %w", err)
 	}
 
-	window, err := dsp.HannWindow(cfg.FFTSize)
+	window, err := cfg.Window(cfg.FFTWindowSize)
 	if err != nil {
 		return fmt.Errorf("failed to build window: %w", err)
 	}
 
-	fft := dsp.NewFFT(cfg.FFTSize)
+	fft := dsp.NewFFT(cfg.FFTWindowSize)
 
 	spectrogram, err := dsp.Spectrogram(frames, window, fft)
 	if err != nil {

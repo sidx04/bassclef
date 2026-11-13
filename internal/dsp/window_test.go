@@ -64,3 +64,25 @@ func TestApplyWindow(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultConfigWindowShouldBeHannWindow(t *testing.T) {
+	cfg := DefaultConfig()
+
+	if cfg.Window == nil {
+		t.Fatal("DefaultConfig().Window is nil")
+	}
+
+	actual, err := cfg.Window(5)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	expected, _ := HannWindow(5)
+
+	for i := range expected {
+		if actual[i] != expected[i] {
+			t.Errorf("index %d: expected %f, got %f", i, expected[i], actual[i])
+		}
+	}
+
+}

@@ -17,19 +17,19 @@ import (
 func FromBuffer(buf *audio.AudioBuffer) ([]Landmark, error) {
 	dsp.NormalizeGain(buf.Samples)
 
-	cfg := dsp.DefaultConfig() // defaults of [FFTSize: 4096, HopSize: 2048]
+	cfg := dsp.DefaultConfig() // defaults of [FFTWindowSize: 4096, HopSize: 2048]
 
-	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
+	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTWindowSize, cfg.HopSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to split frames: %w", err)
 	}
 
-	window, err := dsp.HannWindow(cfg.FFTSize)
+	window, err := cfg.Window(cfg.FFTWindowSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build window: %w", err)
 	}
 
-	spectrogram, err := dsp.Spectrogram(frames, window, dsp.NewFFT(cfg.FFTSize))
+	spectrogram, err := dsp.Spectrogram(frames, window, dsp.NewFFT(cfg.FFTWindowSize))
 	if err != nil {
 		return nil, fmt.Errorf("failed to compute spectrogram: %w", err)
 	}
