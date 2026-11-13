@@ -7,16 +7,17 @@ import (
 	"github.com/sidx04/bassclef/internal/dsp"
 )
 
-// FromBuffer runs the full audio-to-landmarks fingerprinting pipeline -
+// Generates audio landmarks via the fingerprinting pipeline -
 // gain normalization, frame splitting, windowing, FFT, spectrogram, peak
-// detection, and landmark generation - using DefaultPeakConfig and
-// DefaultLandmarkConfig. catalog.Ingest and every CLI recognition path
-// share this, so both sides of matching always use identical config and
-// gain handling.
+// detection, and landmark generation. Check [DefaultPeakConfig] and
+// [DefaultLandmarkConfig] for peak detection and landmarking defaults.
+//
+// [DefaultPeakConfig]: https://github.com/sidx04/bassclef/blob/main/internal/fingerprint/defaults.go#L14
+// [DefaultLandmarkConfig]: https://github.com/sidx04/bassclef/blob/main/internal/fingerprint/defaults.go#L20
 func FromBuffer(buf *audio.AudioBuffer) ([]Landmark, error) {
 	dsp.NormalizeGain(buf.Samples)
 
-	cfg := dsp.DefaultConfig()
+	cfg := dsp.DefaultConfig() // defaults of [FFTSize: 4096, HopSize: 2048]
 
 	frames, err := dsp.SplitFrames(buf.Samples, cfg.FFTSize, cfg.HopSize)
 	if err != nil {

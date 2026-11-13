@@ -2,16 +2,17 @@ package catalog
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sidx04/bassclef/internal/audio"
 	"github.com/sidx04/bassclef/internal/fingerprint"
 	"github.com/sidx04/bassclef/internal/storage"
 )
 
-// Ingest runs the full fingerprinting pipeline against the WAV file at
-// path and persists the song and its fingerprints to store.
+// Runs the full fingerprinting pipeline against the WAV file at
+// path and persists the song and its fingerprints to the database.
 func Ingest(store storage.Store, path, title, artist string) error {
-	if title == "" {
+	if title == "" || len(strings.TrimSpace(title)) == 0 {
 		return fmt.Errorf("title cannot be empty")
 	}
 

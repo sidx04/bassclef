@@ -2,7 +2,7 @@ package dsp
 
 import "fmt"
 
-// SplitFrames splits samples into overlapping fixed-size frames for FFT
+// Splits samples into overlapping fixed-size frames for FFT
 // processing. Each frame holds frameSize samples; consecutive frames start
 // hopSize samples apart, so hopSize < frameSize gives overlapping frames
 // and hopSize == frameSize gives non-overlapping frames.
