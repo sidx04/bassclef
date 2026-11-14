@@ -45,7 +45,8 @@ type LandmarkConfig struct {
 	// MaxDeltaFrames is the largest anchor-to-target gap, in frames, that
 	// counts as a pairing.
 	MaxDeltaFrames int
-	// Fanout caps how many target peaks one anchor pairs with; when more
-	// candidates fall in the window, the nearest in time win.
+	// Fanout is the number of nearby target peaks paired with a single
+	// "anchor" peak on a spectrogram to create unique audio hashes.
+	// When more than expected candidates fall in the window, the nearest in time win.
 	Fanout int
 }
