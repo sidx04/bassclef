@@ -30,6 +30,9 @@ type WAVDecoder struct{}
 // MP3Decoder is an AudioDecoder for MP3 audio. Use NewMP3Decoder to construct one.
 type MP3Decoder struct{}
 
+// FLACDecoder is an AudioDecoder for FLAC audiio. Use NewFLACDecoder to construct one.
+type FLACDecoder struct{}
+
 // defaultCaptureSampleRate must match the sample rate WAV fixtures are ingested
 // at (44100 Hz). Landmark time offsets are a sample-count-based unit,
 // not a real-time one, so a mismatched capture rate
