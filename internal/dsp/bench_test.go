@@ -80,3 +80,17 @@ func BenchmarkSpectrogram(b *testing.B) {
 		}
 	}
 }
+
+// BenchmarkSplitFramesCopy measures SplitFrames on a song-length signal at
+// the default config. It captures the per-frame allocation and copy.
+func BenchmarkSplitFrames(b *testing.B) {
+	cfg := DefaultConfig()
+	samples := createBenchSignals(benchSampleRate * benchSeconds)
+
+	b.ReportAllocs()
+	for b.Loop() {
+		if _, err := SplitFrames(samples, cfg.FFTWindowSize, cfg.HopSize); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

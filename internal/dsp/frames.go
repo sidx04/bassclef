@@ -36,12 +36,8 @@ func extractSplitFrames(samples []float64, frameSize int, hopSize int) [][]float
 
 	frames := make([][]float64, 0, frameCount)
 
-	for start := 0; start+frameSize <= len(samples); start += hopSize {
-		frame := make([]float64, frameSize)
-
-		copy(frame, samples[start:start+frameSize])
-
-		frames = append(frames, frame)
+	for idx := 0; idx+frameSize <= len(samples); idx += hopSize {
+		frames = append(frames, samples[idx:idx+frameSize:idx+frameSize])
 	}
 	return frames
 }
