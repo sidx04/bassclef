@@ -77,7 +77,7 @@ func (cmd *SpectrogramCmd) Run() error {
 	}
 
 	fmt.Printf("Frames: %d\n", len(spectrogram))
-	fmt.Printf("Bins per frame: %d\n", cfg.FFTWindowSize)
+	fmt.Printf("Bins per frame: %d\n", cfg.FFTWindowSize/2+1)
 
 	return nil
 }

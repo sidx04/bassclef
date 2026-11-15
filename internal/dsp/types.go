@@ -7,7 +7,7 @@ package dsp
 type Config struct {
 	// FFTWindowSize is the number of samples per analysis frame, and the size of
 	// the FFT run over it. Must be a size the chosen FFT implementation
-	// supports (a power of two, for CmplxFFT).
+	// supports (a power of two, for RealFFT).
 	FFTWindowSize int
 	// HopSize is the number of samples the frame window advances between
 	// consecutive frames.

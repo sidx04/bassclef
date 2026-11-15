@@ -48,10 +48,11 @@ func BenchmarkForward(b *testing.B) {
 	}
 
 	fft := NewFFT(cfg.FFTWindowSize)
+	dst := make([]complex128, cfg.FFTWindowSize/2+1)
 
 	b.ReportAllocs()
 	for b.Loop() {
-		fft.Forward(frame)
+		dst = fft.Forward(dst, frame)
 	}
 }
 
