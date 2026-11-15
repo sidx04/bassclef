@@ -105,6 +105,50 @@ func TestGenerateLandmarksUnsortedInput(t *testing.T) {
 	}
 }
 
+// GenerateLandmarks sorts unsorted input internally. It must sort a copy:
+// the caller's slice keeps its original order, whether or not it was
+// already sorted.
+func TestGenerateLandmarksDoesNotMutateInput(t *testing.T) {
+	cfg := LandmarkConfig{MinDeltaFrames: 1, MaxDeltaFrames: 10, Fanout: 5}
+
+	tests := []struct {
+		name  string
+		peaks []Peak
+	}{
+		{
+			name: "sorted",
+			peaks: []Peak{
+				{Time: 0, Frequency: 100, Magnitude: 10},
+				{Time: 2, Frequency: 150, Magnitude: 10},
+				{Time: 5, Frequency: 200, Magnitude: 10},
+			},
+		},
+		{
+			name: "unsorted",
+			peaks: []Peak{
+				{Time: 5, Frequency: 200, Magnitude: 10},
+				{Time: 0, Frequency: 100, Magnitude: 10},
+				{Time: 2, Frequency: 150, Magnitude: 10},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			before := make([]Peak, len(tt.peaks))
+			copy(before, tt.peaks)
+
+			if _, err := GenerateLandmarks(tt.peaks, cfg); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if !reflect.DeepEqual(tt.peaks, before) {
+				t.Errorf("input modified: got %#v, want %#v", tt.peaks, before)
+			}
+		})
+	}
+}
+
 func TestGenerateLandmarksEmptyPeaks(t *testing.T) {
 	cfg := LandmarkConfig{MinDeltaFrames: 1, MaxDeltaFrames: 10, Fanout: 5}
 

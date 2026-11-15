@@ -1,14 +1,15 @@
 package fingerprint
 
 import (
+	"cmp"
 	"fmt"
-	"sort"
+	"slices"
 )
 
 // GenerateLandmarks pairs each peak, as an anchor, with the nearest-in-time
 // peaks that follow it within cfg's delta window, up to cfg.Fanout pairs
-// per anchor. peaks need not be time-sorted; a sorted copy is made
-// internally.
+// per anchor. peaks need not be time-sorted: if they are not, a sorted
+// copy is made internally. peaks itself is never modified.
 func GenerateLandmarks(peaks []Peak, cfg LandmarkConfig) ([]Landmark, error) {
 	if cfg.MinDeltaFrames < 0 {
 		return nil, fmt.Errorf("min delta frames cannot be negative: %d", cfg.MinDeltaFrames)
@@ -34,19 +35,27 @@ func GenerateLandmarks(peaks []Peak, cfg LandmarkConfig) ([]Landmark, error) {
 		return nil, nil
 	}
 
-	sorted := make([]Peak, len(peaks))
-	copy(sorted, peaks)
-	sort.SliceStable(sorted, func(i, j int) bool {
-		return sorted[i].Time < sorted[j].Time
-	})
+	sortByTimeFunc := func(a, b Peak) int {
+		return cmp.Compare(a.Time, b.Time)
+	}
 
-	var landmarks []Landmark
+	sortedPeaks := peaks
 
-	for i, anchor := range sorted {
+	// FindPeaks already returns peaks in time order, so the copy and sort
+	// are usually skipped. this also reduces the memory overhead
+	// of creating duplicated slices everytime GenerateLandmarks is called.
+	if !slices.IsSortedFunc(peaks, sortByTimeFunc) {
+		sortedPeaks = slices.Clone(peaks)
+		slices.SortStableFunc(sortedPeaks, sortByTimeFunc)
+	}
+
+	var landmarks = make([]Landmark, 0, len(peaks)*cfg.Fanout)
+
+	for i, anchor := range sortedPeaks {
 		matched := 0
 
-		for j := i + 1; j < len(sorted) && matched < cfg.Fanout; j++ {
-			target := sorted[j]
+		for j := i + 1; j < len(sortedPeaks) && matched < cfg.Fanout; j++ {
+			target := sortedPeaks[j]
 			delta := target.Time - anchor.Time
 
 			if delta > cfg.MaxDeltaFrames {
