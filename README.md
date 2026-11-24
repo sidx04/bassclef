@@ -108,6 +108,7 @@ Response `200`:
 {
   "matches": [
     {
+      "song_id": 1,
       "title": "Song One",
       "artist": "Artist A",
       "score": 212,

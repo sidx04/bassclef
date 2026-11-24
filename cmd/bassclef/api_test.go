@@ -117,6 +117,10 @@ func TestRecognizeWAVMatch(t *testing.T) {
 	if resp.Matches[0].Title != "Song A" {
 		t.Errorf("got title %q, want %q", resp.Matches[0].Title, "Song A")
 	}
+
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"song_id":1`)) {
+		t.Errorf("got body %s, want song_id field", rec.Body.String())
+	}
 }
 
 func TestRecognizeMP3Match(t *testing.T) {
