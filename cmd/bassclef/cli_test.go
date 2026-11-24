@@ -118,6 +118,24 @@ func TestRecognizeCandidatesMatch(t *testing.T) {
 	}
 }
 
+func TestRecognizeCandidatesSongID(t *testing.T) {
+	const songID int64 = 7
+	store := selfMatchingStore(t, testBuffer(), songID, storage.Song{ID: songID, Title: "Song A", Artist: "Artist A"})
+
+	results, err := recognizeCandidates(store, testBuffer(), 5, 1, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("got %d results, want 1", len(results))
+	}
+
+	if results[0].SongID != songID {
+		t.Errorf("got song ID %d, want %d", results[0].SongID, songID)
+	}
+}
+
 func TestRecognizeCandidatesMetadataNotFound(t *testing.T) {
 	store := selfMatchingStore(t, testBuffer(), 1, storage.Song{ID: 1, Title: "Song A", Artist: "Artist A"})
 	provider := &fakeProvider{err: metadata.ErrNotFound}

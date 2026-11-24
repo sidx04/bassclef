@@ -231,6 +231,7 @@ func (cmd *RecognizeCmd) Run() error {
 // catalog song plus its match score and (if available) Spotify metadata.
 // Shared by the CLI's printed output and the HTTP API's JSON response.
 type MatchResult struct {
+	SongID     int64   `json:"song_id"`
 	Title      string  `json:"title"`
 	Artist     string  `json:"artist"`
 	Score      int     `json:"score"`
@@ -273,6 +274,7 @@ func recognizeCandidates(store storage.Store, buf *audio.AudioBuffer, topN, minV
 		}
 
 		result := MatchResult{
+			SongID:     c.SongID,
 			Title:      song.Title,
 			Artist:     song.Artist,
 			Score:      c.Score,
