@@ -194,14 +194,9 @@ go test -bench=. ./internal/dsp/ ./internal/fingerprint/
 
 The tests do not need a microphone or Spotify. HTTP and metadata tests use fakes for `storage.Store` and `metadata.MetadataProvider`. For manual testing, put your own audio files in `testdata/`. That directory is gitignored, and no audio files are committed.
 
-### Contributing guidelines
+### Contributing
 
-- **Keep ingest and query in sync.** Catalog ingest and recognition must run the same pipeline with the same parameters, or no hashes will match. Both call `fingerprint.FromBuffer`, so change parameters only in `dsp.DefaultConfig()` and `internal/fingerprint/defaults.go`.
-- **A pipeline change invalidates existing catalogs.** A change to the window function, FFT size, hop size, peak or landmark defaults, or hash layout changes every fingerprint. Delete your `.db` file and ingest again after such a change.
-- **Keep stages separate.** Capture, DSP, fingerprinting, matching, storage, and metadata each stay in their own `internal/` package. The fingerprint pipeline must stay testable from audio files alone, with no hardware.
-- **Add a subcommand** by defining a `<X>Cmd` struct with a `Run() error` method and adding it as a field of the `CLI` struct in `cmd/bassclef/main.go`.
-- **Put HTTP code in `cmd/bassclef/api.go`.**
-- Run `go vet ./...` and `go test ./...` before you open a pull request.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks, pipeline rules, and commit conventions.
 
 ## Known limitations
 
